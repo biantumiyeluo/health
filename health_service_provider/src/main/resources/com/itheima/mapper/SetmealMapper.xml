@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.itheima.mapper.SetmealMapper">
+    <!--建立关系-->
+    <insert id="setSetmealAndCheckGroup" parameterType="java.util.Map">
+        insert into `health`.`t_setmeal_checkgroup` (`setmeal_id`, `checkgroup_id`)
+        values (#{setmeal_id}, #{checkgroup_id})
+    </insert>
+    <!--add-->
+    <insert id="add" parameterType="com.itheima.pojo.Setmeal">
+        <selectKey resultType="java.lang.Integer" order="AFTER" keyProperty="id">
+            select last_insert_id()
+        </selectKey>
+        insert into `health`.`t_setmeal` (`name`,`code`,`helpCode`,`sex`,`age`,`price`,`remark`,`attention`,`img`)
+        values (#{name},#{code},#{helpCode},#{sex},#{age},#{price},#{remark},#{attention},#{img})
+    </insert>
+    <!--分页查询-->
+    <select id="selectByCondition" resultType="com.itheima.pojo.CheckItem">
+        select * from t_setmeal
+        <if test="value != null and value !='' and value.length > 0">
+            where code like CONCAT('%',#{value},'%')
+            or name like CONCAT('%',#{value},'%')
+            or helpCode like CONCAT('%',#{value},'%')
+        </if>
+    </select>
+
+    <!--删除-->
+    <delete id="delete">
+        delete from t_setmeal where id = #{id}
+    </delete>
+    <delete id="deleteAssociation">
+        delete from t_setmeal_checkgroup where setmeal_id = #{id}
+    </delete>
+    <!--picture-->
+    <select id="picture" resultType="java.lang.String">
+        select img from t_setmeal where id = #{id}
+    </select>
+    <!--查套餐-->
+    <select id="findById" resultType="com.itheima.pojo.Setmeal">
+        select * from t_setmeal where id = #{id}
+    </select>
+    <!--中间表查关系-->
+    <select id="findCheckGroupIdsByCheckSetmealId" resultType="java.lang.Integer">
+        select checkgroup_id from t_setmeal_checkgroup where setmeal_id = #{id}
+    </select>
+    <!--编辑-->
+    <update id="edit">
+        update `health`.`t_setmeal` set
+        `name` = #{name},`code` = #{code},`helpCode` = #{helpCode},`sex` = #{sex},`age` = #{age},`price` = #{price},`remark` = #{remark},`attention` = #{attention},`img` = #{img}
+        where `id` = #{id}
+    </update>
+    <!--移动端查所有信息-->
+    <select id="findAll" resultType="com.itheima.pojo.Setmeal">
+        select * from t_setmeal
+    </select>
+    <!--查询移动端套餐信息-->
+    <select id="findSetmealById" parameterType="integer" resultMap="findByIdResultMap">
+        select * from t_setmeal where id = #{id}
+    </select>
+    <!--封装检查组信息-->
+    <resultMap id="baseResultMap" type="com.itheima.pojo.Setmeal">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="code" property="code"/>
+        <result column="helpCode" property="helpCode"/>
+        <result column="sex" property="sex"/>
+        <result column="age" property="age"/>
+        <result column="price" property="price"/>
+        <result column="remark" property="remark"/>
+        <result column="attention" property="attention"/>
+        <result column="img" property="img"/>
+    </resultMap>
+    <!--调用检查组中查询检查项的sql-->
+    <resultMap id="findByIdResultMap" type="com.itheima.pojo.Setmeal" extends="baseResultMap">
+        <collection property="checkGroups"
+                    select="com.itheima.mapper.CheckGroupMapper.findCheckGroupById"
+                    ofType="com.itheima.pojo.CheckGroup"
+                    column="id"/>
+    </resultMap>
+
+    <!--查询套餐总数-->
+    <select id="findSetmealCount" resultType="java.util.Map">
+        select s.`name`,COUNT(o.`id`) as value
+            from t_order o, t_setmeal s
+                where o.`setmeal_id` = s.`id`
+                    group by s.`name`
+    </select>
+</mapper>

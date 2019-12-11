@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.itheima.mapper.CheckGroupMapper">
+    <!--1.添加-->
+    <insert id="add" parameterType="com.itheima.pojo.CheckGroup">
+        <!--查询最后添加信息的id值-->
+        <selectKey keyProperty="id" resultType="java.lang.Integer" order="AFTER">
+            select last_insert_id()
+        </selectKey>
+        insert into `health`.`t_checkgroup` (`code`,`name`,`helpCode`,`sex`,`remark`,`attention`)
+        values (#{code},#{name},#{helpCode},#{sex},#{remark},#{attention})
+    </insert>
+    <!--检查组和检查项的关系-->
+    <insert id="setCheckGroupAndCheckItem" parameterType="hashmap">
+        insert into t_checkgroup_checkitem values (#{checkgroup_id},#{checkitem_id})
+    </insert>
+    <!--分页-->
+    <select id="selectByCondition" resultType="com.itheima.pojo.CheckItem" parameterType="String">
+        select * from t_checkgroup
+        <if test="value != null and value.length > 0 and value != ''">
+            where code like CONCAT('%',#{value},'%')
+            or name like CONCAT('%',#{value},'%')
+            or helpCode like CONCAT('%',#{value},'%')
+        </if>
+    </select>
+    <select id="selectCount" resultType="Integer">
+        select count(*) from t_checkgroup where code like CONCAT('%',#{code},'%')
+            or name like CONCAT('%',#{name},'%')
+            or helpCode like CONCAT('%',#{helpCode},'%')
+    </select>
+    <!--根据id查询信息-->
+    <select id="findById" resultType="com.itheima.pojo.CheckGroup">
+        select * from t_checkgroup where id = #{id}
+    </select>
+    <!--多表联合查询-->
+    <select id="findCheckItemIdsByCheckGroupId" resultType="java.lang.Integer" parameterType="java.lang.Integer">
+        select checkitem_id from t_checkgroup_checkitem where checkgroup_id = #{id}
+    </select>
+    <!--修改检查组-->
+    <update id="edit">
+        update t_checkgroup
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="sex != null">sex = #{sex},</if>
+            <if test="code != null">code = #{code},</if>
+            <if test="helpCode != null">helpCode = #{helpCode},</if>
+            <if test="attention != null">attention = #{attention},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        where id = #{id}
+    </update>
+    <!--删除相关数据-->
+    <delete id="deleteAssociation" parameterType="java.lang.Integer">
+        delete from t_checkgroup_checkitem where checkgroup_id = #{id}
+    </delete>
+    <delete id="delete">
+        delete from t_checkgroup where id = #{id}
+    </delete>
+    <!--查询检查组-->
+    <select id="findAll" resultType="com.itheima.pojo.CheckGroup">
+        select * from t_checkgroup
+    </select>
+    <!--移动端查询检查项-->
+    <select id="findCheckGroupById" parameterType="integer" resultMap="findByIdResuletMap">
+        select * from t_checkgroup
+        where id
+        in (select checkgroup_id from t_setmeal_checkgroup where setmeal_id = #{setmeal_id})
+    </select>
+    <!--封装检查项数据-->
+    <resultMap id="baseResultMap" type="com.itheima.pojo.CheckGroup">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="code" property="code"/>
+        <result column="helpCode" property="helpCode"/>
+        <result column="sex" property="sex"/>
+        <result column="remark" property="remark"/>
+        <result column="attention" property="attention"/>
+    </resultMap>
+    <!--集成base,调用检查项的sql-->
+    <resultMap id="findByIdResuletMap" type="com.itheima.pojo.CheckGroup" extends="baseResultMap">
+        <collection property="checkItems"
+                    column="id"
+                    ofType="com.itheima.pojo.CheckItem"
+                    select="com.itheima.mapper.CheckItemMapper.findCheckItemById"/>
+    </resultMap>
+</mapper>
